@@ -16,8 +16,7 @@
 #include "driverlib/pwm.h"
 #include "driverlib/interrupt.h"
 
-
-
+#include "rgb_led.h"
 
 
 static uint8_t m_ucColor = 0;
@@ -27,6 +26,7 @@ static uint32_t g_ui32SysClock;
 
 void Init_PWM(void);
 void Button_Interrupt(void);
+void LED_Init(void);
 
 int main(void)
 {
@@ -39,30 +39,27 @@ int main(void)
                                              SYSCTL_USE_PLL |
                                              SYSCTL_CFG_VCO_480), 120000000);
 
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOG );
-
-
-    GPIOPinTypeGPIOOutput(GPIO_PORTG_BASE, GPIO_PIN_0);
 
     //Init_PWM();
+    LED_Init();
 
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOJ);
-    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOJ))
-    {
-    }
-
-    GPIOIntRegister(GPIO_PORTJ_BASE, Button_Interrupt);
-
-    GPIOPinTypeGPIOInput(GPIO_PORTJ_BASE, GPIO_PIN_0);
-
-    GPIOIntTypeSet(GPIO_PORTJ_BASE, GPIO_PIN_0, GPIO_FALLING_EDGE);
-
-    GPIOIntEnable(GPIO_PORTJ_BASE, GPIO_INT_PIN_0);
-
-    GPIOIntClear(GPIO_PORTJ_BASE, GPIO_INT_PIN_0);
-
-    IntEnable(INT_GPIOJ);
-    IntMasterEnable();
+//    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOJ);
+//    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOJ))
+//    {
+//    }
+//
+//    GPIOIntRegister(GPIO_PORTJ_BASE, Button_Interrupt);
+//
+//    GPIOPinTypeGPIOInput(GPIO_PORTJ_BASE, GPIO_PIN_0);
+//
+//    GPIOIntTypeSet(GPIO_PORTJ_BASE, GPIO_PIN_0, GPIO_FALLING_EDGE);
+//
+//    GPIOIntEnable(GPIO_PORTJ_BASE, GPIO_INT_PIN_0);
+//
+//    GPIOIntClear(GPIO_PORTJ_BASE, GPIO_INT_PIN_0);
+//
+//    IntEnable(INT_GPIOJ);
+//    IntMasterEnable();
     //PWMGenConfigure(PWM0_BASE, )
 
     while(1)
@@ -70,30 +67,28 @@ int main(void)
         //
         // Turn on the LED.
         //
-        GPIOPinWrite(GPIO_PORTG_BASE, GPIO_PIN_0, GPIO_PIN_0);
+        RGB_LED_SetState(BLUE, ON);
 
         //
         // Delay for a bit.
         //
-        for(ui32Loop = 0; ui32Loop < 2000000; ui32Loop++)
-        {
-        }
+        SysCtlDelay(20000000);
         //
         // Turn off the LED.
         //
-        GPIOPinWrite(GPIO_PORTG_BASE, GPIO_PIN_0, 0x0);
+        RGB_LED_SetState(BLUE, OFF);
 
         //
         // Delay for a bit.
         //
-        for(ui32Loop = 0; ui32Loop < 2000000; ui32Loop++)
-        {
-        }
+        SysCtlDelay(20000000);
 
-        val = GPIOPinRead(GPIO_PORTJ_BASE, GPIO_PIN_0);
+
+//        val = GPIOPinRead(GPIO_PORTJ_BASE, GPIO_PIN_0);
     }
 
 }
+
 
 void Button_Interrupt(void)
 {
