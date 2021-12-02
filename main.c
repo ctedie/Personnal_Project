@@ -16,6 +16,7 @@
 #include "driverlib/pwm.h"
 #include "driverlib/interrupt.h"
 #include "driverlib/systick.h"
+#include "driverlib/pin_map.h"
 
 //#include "rgb_led.h"
 
@@ -42,9 +43,9 @@ int main(void)
                                              SYSCTL_CFG_VCO_480), 120000000);
 
 
-    //Init_PWM();
+    Init_PWM();
     //LED_Init();
-    Init_Systick();
+//    Init_Systick();
 
 
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPION);
@@ -63,7 +64,8 @@ int main(void)
 //    GPIOIntClear(GPIO_PORTJ_BASE, GPIO_INT_PIN_0);
 //
 //    IntEnable(INT_GPIOJ);
-//    IntMasterEnable();
+    IntEnable(INT_PWM0_1);
+    IntMasterEnable();
     //PWMGenConfigure(PWM0_BASE, )
 
     while(1)
@@ -113,46 +115,71 @@ void Init_PWM(void)
     //
     SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM0);
 
-    GPIOPinTypePWM(GPIO_PORTF_BASE, GPIO_PIN_2);
-
-    ///
+    //
     // Wait for the PWM0 module to be ready.
     //
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_PWM0))
     {
     }
     //
+    // Enable the PWM0 peripheral
+    //
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+
+    //
+    // Wait for the PWM0 module to be ready.
+    //
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOF))
+    {
+    }
+
+
+
+
+    GPIOPinTypePWM(GPIO_PORTF_BASE, GPIO_PIN_2);
+    GPIOPinConfigure(GPIO_PF2_M0PWM2);
+
+
+
+
+    //
     // Configure the PWM generator for count down mode with immediate updates
     // to the parameters.
     //
-    //PWMGenConfigure(PWM0_BASE PWM_GEN_0, PWM_GEN_MODE_DOWN | PWM_GEN_MODE_NO_SYNC);
+
+    PWMGenConfigure(PWM0_BASE, PWM_GEN_1, PWM_GEN_MODE_DOWN | PWM_GEN_MODE_NO_SYNC);
 
     //
     // Set the period. For a 50 KHz frequency, the period = 1/50,000, or 20
-    // microseconds. For a 20 MHz clock, this translates to 400 clock ticks.
+    // microseconds. For a 120 MHz clock, this translates to 120000000 clock ticks.
     // Use this value to set the period.
     //
-    PWMGenPeriodSet(PWM0_BASE, PWM_GEN_0, 400);
+    PWMGenPeriodSet(PWM0_BASE, PWM_GEN_1, 12000000 );
 
     //
-    // Set the pulse width of PWM0 for a 25% duty cycle.
+    // Set the pulse width of PWM2 for a 501% duty cycle.
     //
-    PWMPulseWidthSet(PWM0_BASE, PWM_OUT_0, 100);
+    PWMPulseWidthSet(PWM0_BASE, PWM_OUT_2, 6000000);
+//        PWMPulseWidthSet(PWM0_BASE, PWM_OUT_2, 00100000);
+//        PWMPulseWidthSet(PWM0_BASE, PWM_OUT_2, 11900000);
 
-    //
-    // Set the pulse width of PWM1 for a 75% duty cycle.
-    //
-    PWMPulseWidthSet(PWM0_BASE, PWM_OUT_1, 300);
-
-    //
-    // Start the timers in generator 0.
-    //
-    PWMGenEnable(PWM0_BASE, PWM_GEN_0);
 
     //
     // Enable the outputs.
     //
-    PWMOutputState(PWM0_BASE, (PWM_OUT_0_BIT | PWM_OUT_1_BIT), true);
+    PWMOutputState(PWM0_BASE, PWM_OUT_2_BIT, true);
+
+
+    //
+    // Start the timers in generator 0.
+    //
+
+    PWMGenEnable(PWM0_BASE, PWM_GEN_1);
+
+    PWMGenIntTrigEnable(PWM0_BASE, PWM_GEN_1, PWM_INT_CNT_AD);
+
+    PWMIntEnable(PWM0_BASE, PWM_INT_GEN_1);
+
 
 }
 
@@ -197,4 +224,26 @@ void SystickISR(void)
 
     }
 
+}
+
+void PWMISR(void)
+{
+    uint32_t uiITState;
+    uint32_t state2;
+
+    state2 = PWMIntStatus(PWM0_BASE, true);
+    uiITState = PWMGenIntStatus(PWM0_BASE, PWM_GEN_1, true);
+
+    if(bTest == true)
+    {
+        PWMOutputState(PWM0_BASE, PWM_OUT_2_BIT, false);
+        bTest = false;
+    }
+    else if(bTest == false)
+    {
+        PWMOutputState(PWM0_BASE, PWM_OUT_2_BIT, true);
+        bTest = true;
+    }
+
+    PWMGenIntClear(PWM0_BASE, PWM_GEN_1, uiITState);
 }
