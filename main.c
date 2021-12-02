@@ -107,7 +107,7 @@ void Button_Interrupt(void)
 
     GPIOIntClear(GPIO_PORTJ_BASE, GPIO_INT_PIN_0);
 }
-
+uint32_t m_temp = 0;
 void Init_PWM(void)
 {
     //
@@ -136,8 +136,8 @@ void Init_PWM(void)
 
 
 
-    GPIOPinTypePWM(GPIO_PORTF_BASE, GPIO_PIN_2);
     GPIOPinConfigure(GPIO_PF2_M0PWM2);
+    GPIOPinTypePWM(GPIO_PORTF_BASE, GPIO_PIN_2);
 
 
 
@@ -149,17 +149,19 @@ void Init_PWM(void)
 
     PWMGenConfigure(PWM0_BASE, PWM_GEN_1, PWM_GEN_MODE_DOWN | PWM_GEN_MODE_NO_SYNC);
 
+    PWMClockSet(PWM0_BASE, PWM_SYSCLK_DIV_64);
+    m_temp = PWMClockGet(PWM0_BASE);
     //
     // Set the period. For a 50 KHz frequency, the period = 1/50,000, or 20
     // microseconds. For a 120 MHz clock, this translates to 120000000 clock ticks.
     // Use this value to set the period.
     //
-    PWMGenPeriodSet(PWM0_BASE, PWM_GEN_1, 12000000 );
+    PWMGenPeriodSet(PWM0_BASE, PWM_GEN_1, 1875000/*12000000 */);
 
     //
     // Set the pulse width of PWM2 for a 501% duty cycle.
     //
-    PWMPulseWidthSet(PWM0_BASE, PWM_OUT_2, 6000000);
+    PWMPulseWidthSet(PWM0_BASE, PWM_OUT_2, 1875/*1875000/2*//*6000000*/);
 //        PWMPulseWidthSet(PWM0_BASE, PWM_OUT_2, 00100000);
 //        PWMPulseWidthSet(PWM0_BASE, PWM_OUT_2, 11900000);
 
@@ -167,19 +169,19 @@ void Init_PWM(void)
     //
     // Enable the outputs.
     //
-    PWMOutputState(PWM0_BASE, PWM_OUT_2_BIT, true);
 
 
     //
     // Start the timers in generator 0.
     //
 
-    PWMGenEnable(PWM0_BASE, PWM_GEN_1);
-
-    PWMGenIntTrigEnable(PWM0_BASE, PWM_GEN_1, PWM_INT_CNT_AD);
-
     PWMIntEnable(PWM0_BASE, PWM_INT_GEN_1);
 
+    PWMGenIntTrigEnable(PWM0_BASE, PWM_GEN_1, PWM_INT_CNT_LOAD);
+
+    PWMOutputState(PWM0_BASE, PWM_OUT_2_BIT, true);
+
+    PWMGenEnable(PWM0_BASE, PWM_GEN_1);
 
 }
 
@@ -236,12 +238,12 @@ void PWMISR(void)
 
     if(bTest == true)
     {
-        PWMOutputState(PWM0_BASE, PWM_OUT_2_BIT, false);
+//        PWMOutputState(PWM0_BASE, PWM_OUT_2_BIT, false);
         bTest = false;
     }
     else if(bTest == false)
     {
-        PWMOutputState(PWM0_BASE, PWM_OUT_2_BIT, true);
+//        PWMOutputState(PWM0_BASE, PWM_OUT_2_BIT, true);
         bTest = true;
     }
 
