@@ -17,11 +17,13 @@
 #include "driverlib/interrupt.h"
 #include "driverlib/systick.h"
 #include "driverlib/pin_map.h"
+#include "driverlib/adc.h"
 
 //#include "rgb_led.h"
 
 
 static uint8_t m_ucColor = 0;
+uint32_t ui32Value;
 
 
 static uint32_t g_ui32SysClock;
@@ -30,6 +32,7 @@ void Init_PWM(void);
 void Button_Interrupt(void);
 void LED_Init(void);
 void Init_Systick(void);
+void Joystick_init(void);
 
 int main(void)
 {
@@ -46,7 +49,7 @@ int main(void)
     Init_PWM();
     //LED_Init();
     Init_Systick();
-
+    Joystick_init();
 
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPION);
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPION))
@@ -188,10 +191,10 @@ void Init_PWM(void)
 
 //    PWMGenIntTrigEnable(PWM0_BASE, PWM_GEN_1, PWM_INT_CNT_LOAD);
 
-    PWMOutputState(PWM0_BASE, PWM_OUT_2_BIT | PWM_OUT_3_BIT | PWM_OUT_4_BIT, true);
+    PWMOutputState(PWM0_BASE, PWM_OUT_2_BIT /*| PWM_OUT_3_BIT | PWM_OUT_4_BIT*/, true);
 
     PWMGenEnable(PWM0_BASE, PWM_GEN_1);
-    PWMGenEnable(PWM0_BASE, PWM_GEN_2);
+//    PWMGenEnable(PWM0_BASE, PWM_GEN_2);
 
 }
 
@@ -215,6 +218,8 @@ void Init_Systick(void)
 }
 
 static uint32_t ulCntTick = 0;
+static uint32_t ulCnt50ms = 0;
+double val;
 bool bTest = false;
 
 uint32_t m_pulWidth[] = {187500, 375000, 562500, 750000, 937500, 1125000, 1312500, 1500000, 1687500, 1875000};
@@ -222,12 +227,31 @@ uint8_t m_index = 0;
 void SystickISR(void)
 {
 
+
+
     ulCntTick++;
-    if(ulCntTick >= 999)
+    ulCnt50ms++;
+
+
+    if(ulCntTick >= 9/*999*/)
     {
+        ADCProcessorTrigger(ADC0_BASE, 0);
+        //
+        // Wait until the sample sequence has completed.
+        //
+        while(!ADCIntStatus(ADC0_BASE, 0, false))
+        {
+        }
+        //
+        // Read the value from the ADC.
+        //
+        ADCSequenceDataGet(ADC0_BASE, 0, &ui32Value);
+
+        val = (double)ui32Value / 4095.0;
+
         //TODO Change PWM pulse width
 
-        PWMPulseWidthSet(PWM0_BASE, PWM_OUT_2, m_pulWidth[m_index]);
+        PWMPulseWidthSet(PWM0_BASE, PWM_OUT_2, (uint32_t)(1875000.0*val));
         m_index++;
         m_index = m_index%10;
 
@@ -242,6 +266,8 @@ void SystickISR(void)
             GPIOPinWrite(GPIO_PORTN_BASE, GPIO_PIN_0, GPIO_PIN_0);
             bTest = true;
         }
+
+
 
     }
 
@@ -268,3 +294,45 @@ void PWMISR(void)
 
     PWMGenIntClear(PWM0_BASE, PWM_GEN_1, uiITState);
 }
+
+void Joystick_init(void)
+{
+
+
+    //
+    // Enable the ADC0 peripheral
+    //
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);
+
+    //
+    // Wait for the ADC0 module to be ready.
+    //
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_ADC0))
+    {
+    }
+
+    //
+    // Enable the first sample sequencer to capture the value of channel 0 when
+    // the processor trigger occurs.
+    //
+    ADCSequenceConfigure(ADC0_BASE, 0, ADC_TRIGGER_PROCESSOR, 0);
+    ADCSequenceStepConfigure(ADC0_BASE, 0, 0, ADC_CTL_IE | ADC_CTL_END | ADC_CTL_CH0);
+    ADCSequenceEnable(ADC0_BASE, 0);
+    //
+    // Trigger the sample sequence.
+    //
+    ADCProcessorTrigger(ADC0_BASE, 0);
+    //
+    // Wait until the sample sequence has completed.
+    //
+    while(!ADCIntStatus(ADC0_BASE, 0, false))
+    {
+    }
+    //
+    // Read the value from the ADC.
+    //
+    ADCSequenceDataGet(ADC0_BASE, 0, &ui32Value);
+
+}
+
+
