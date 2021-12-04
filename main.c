@@ -10,14 +10,18 @@
 #include <stdbool.h>
 #include "inc/hw_ints.h"
 #include "inc/hw_memmap.h"
+#include "inc/hw_timer.h"
 #include "driverlib/debug.h"
 #include "driverlib/gpio.h"
 #include "driverlib/sysctl.h"
 #include "driverlib/pwm.h"
 #include "driverlib/interrupt.h"
+#include "driverlib/systick.h"
+#include "driverlib/pin_map.h"
+#include "driverlib/timer.h"
 
-#include "rgb_led.h"
-
+//#include "rgb_led.h"
+#include "notes.h"
 
 static uint8_t m_ucColor = 0;
 
@@ -27,6 +31,8 @@ static uint32_t g_ui32SysClock;
 void Init_PWM(void);
 void Button_Interrupt(void);
 void LED_Init(void);
+void Init_Systick(void);
+void Init_Timer(void);
 
 int main(void)
 {
@@ -37,20 +43,27 @@ int main(void)
     g_ui32SysClock = SysCtlClockFreqSet((SYSCTL_XTAL_25MHZ |
                                              SYSCTL_OSC_MAIN |
                                              SYSCTL_USE_PLL |
-                                             SYSCTL_CFG_VCO_480), 120000000);
+                                             SYSCTL_CFG_VCO_480), 15000000);
+
+//    g_ui32SysClock = SysCtlClockFreqSet((SYSCTL_XTAL_25MHZ |
+//                                             SYSCTL_OSC_MAIN |
+//                                             SYSCTL_USE_PLL |
+//                                             SYSCTL_CFG_VCO_480), 120000000);
 
 
-    //Init_PWM();
-    LED_Init();
+    Init_PWM();
+    //LED_Init();
+    //Init_Systick();
+    Init_Timer();
 
-//    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOJ);
-//    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOJ))
-//    {
-//    }
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPION);
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPION))
+    {
+    }
+    GPIOPinTypeGPIOOutput(GPIO_PORTN_BASE, GPIO_PIN_0);
 //
 //    GPIOIntRegister(GPIO_PORTJ_BASE, Button_Interrupt);
 //
-//    GPIOPinTypeGPIOInput(GPIO_PORTJ_BASE, GPIO_PIN_0);
 //
 //    GPIOIntTypeSet(GPIO_PORTJ_BASE, GPIO_PIN_0, GPIO_FALLING_EDGE);
 //
@@ -59,32 +72,14 @@ int main(void)
 //    GPIOIntClear(GPIO_PORTJ_BASE, GPIO_INT_PIN_0);
 //
 //    IntEnable(INT_GPIOJ);
-//    IntMasterEnable();
+    IntEnable(INT_PWM0_1);
+    IntEnable(INT_TIMER0A);
+    IntMasterEnable();
     //PWMGenConfigure(PWM0_BASE, )
 
     while(1)
     {
-        //
-        // Turn on the LED.
-        //
-        RGB_LED_SetState(BLUE, ON);
 
-        //
-        // Delay for a bit.
-        //
-        SysCtlDelay(20000000);
-        //
-        // Turn off the LED.
-        //
-        RGB_LED_SetState(BLUE, OFF);
-
-        //
-        // Delay for a bit.
-        //
-        SysCtlDelay(20000000);
-
-
-//        val = GPIOPinRead(GPIO_PORTJ_BASE, GPIO_PIN_0);
     }
 
 }
@@ -102,6 +97,9 @@ void Button_Interrupt(void)
     GPIOIntClear(GPIO_PORTJ_BASE, GPIO_INT_PIN_0);
 }
 
+
+
+uint32_t m_temp = 0;
 void Init_PWM(void)
 {
     //
@@ -109,45 +107,237 @@ void Init_PWM(void)
     //
     SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM0);
 
-    GPIOPinTypePWM(GPIO_PORTF_BASE, GPIO_PIN_2);
-
-    ///
+    //
     // Wait for the PWM0 module to be ready.
     //
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_PWM0))
     {
     }
     //
+    // Enable the PWM0 peripheral
+    //
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+
+    //
+    // Wait for the PWM0 module to be ready.
+    //
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOF))
+    {
+    }
+    //
+    // Enable the PWM0 peripheral
+    //
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOG);
+
+    //
+    // Wait for the PWM0 module to be ready.
+    //
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOG))
+    {
+    }
+
+
+
+
+    GPIOPinConfigure(GPIO_PF1_M0PWM1);
+    GPIOPinTypePWM(GPIO_PORTF_BASE, GPIO_PIN_1);
+
+//    GPIOPinConfigure(GPIO_PF2_M0PWM2);
+//    GPIOPinTypePWM(GPIO_PORTF_BASE, GPIO_PIN_2);
+//
+//    GPIOPinConfigure(GPIO_PF3_M0PWM3);
+//    GPIOPinTypePWM(GPIO_PORTF_BASE, GPIO_PIN_3);
+//
+//    GPIOPinConfigure(GPIO_PG0_M0PWM4);
+//    GPIOPinTypePWM(GPIO_PORTG_BASE, GPIO_PIN_0);
+
+
+
+
+    //
     // Configure the PWM generator for count down mode with immediate updates
     // to the parameters.
     //
-    //PWMGenConfigure(PWM0_BASE PWM_GEN_0, PWM_GEN_MODE_DOWN | PWM_GEN_MODE_NO_SYNC);
 
+    PWMGenConfigure(PWM0_BASE, PWM_GEN_0, PWM_GEN_MODE_DOWN | PWM_GEN_MODE_NO_SYNC);
+//    PWMGenConfigure(PWM0_BASE, PWM_GEN_2, PWM_GEN_MODE_DOWN | PWM_GEN_MODE_NO_SYNC);
+
+    PWMClockSet(PWM0_BASE, PWM_SYSCLK_DIV_64);
+    m_temp = PWMClockGet(PWM0_BASE);
     //
     // Set the period. For a 50 KHz frequency, the period = 1/50,000, or 20
-    // microseconds. For a 20 MHz clock, this translates to 400 clock ticks.
+    // microseconds. For a 120 MHz clock, this translates to 120000000 clock ticks.
     // Use this value to set the period.
     //
-    PWMGenPeriodSet(PWM0_BASE, PWM_GEN_0, 400);
+    PWMGenPeriodSet(PWM0_BASE, PWM_GEN_0, SI);
+//    PWMGenPeriodSet(PWM0_BASE, PWM_GEN_1, 533);
+//    PWMGenPeriodSet(PWM0_BASE, PWM_GEN_2, 1875000);
 
     //
-    // Set the pulse width of PWM0 for a 25% duty cycle.
+    // Set the pulse width of PWM2 for a 501% duty cycle.
     //
-    PWMPulseWidthSet(PWM0_BASE, PWM_OUT_0, 100);
+//    PWMPulseWidthSet(PWM0_BASE, PWM_OUT_2, 1874981);
 
-    //
-    // Set the pulse width of PWM1 for a 75% duty cycle.
-    //
-    PWMPulseWidthSet(PWM0_BASE, PWM_OUT_1, 300);
 
-    //
-    // Start the timers in generator 0.
-    //
-    PWMGenEnable(PWM0_BASE, PWM_GEN_0);
+    PWMPulseWidthSet(PWM0_BASE, PWM_OUT_1, SI/2);    //buzzer
+//    PWMPulseWidthSet(PWM0_BASE, PWM_OUT_2, 6);    //LED ROUGE
+//    PWMPulseWidthSet(PWM0_BASE, PWM_OUT_3, (1875000/4));    //LED VERTE
+//    PWMPulseWidthSet(PWM0_BASE, PWM_OUT_4, (1875000/6));    //LED BLEUE
+
+
+//        PWMPulseWidthSet(PWM0_BASE, PWM_OUT_2, 00100000);
+//        PWMPulseWidthSet(PWM0_BASE, PWM_OUT_2, 11900000);
+
 
     //
     // Enable the outputs.
     //
-    PWMOutputState(PWM0_BASE, (PWM_OUT_0_BIT | PWM_OUT_1_BIT), true);
 
+
+    //
+    // Start the timers in generator 0.
+    //
+
+//    PWMIntEnable(PWM0_BASE, PWM_INT_GEN_1);
+
+//    PWMGenIntTrigEnable(PWM0_BASE, PWM_GEN_1, PWM_INT_CNT_LOAD);
+
+    PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, true);
+
+    // TODO Uncomment for buzzer
+    //PWMGenEnable(PWM0_BASE, PWM_GEN_0);
+
+
+//    PWMGenEnable(PWM0_BASE, PWM_GEN_2);
+
+}
+
+void Init_Systick(void)
+{
+    uint32_t ui32Value;
+    //
+
+    // Configure and enable the SysTick counter.
+    //
+    SysTickPeriodSet(120000);
+    SysTickIntEnable();
+    SysTickEnable();
+    //
+    // Delay for some time...
+    //
+    //
+    // Read the current SysTick value.
+    //
+    ui32Value = SysTickValueGet();
+
+}
+
+static uint32_t ulCntTick = 0;
+bool bTest = false;
+
+uint32_t m_pulWidth[] = {187500, 375000, 562500, 750000, 937500, 1125000, 1312500, 1500000, 1687500, 1875000};
+uint8_t m_index = 0;
+void SystickISR(void)
+{
+
+    ulCntTick++;
+    if(ulCntTick >= 999)
+    {
+        //TODO Change PWM pulse width
+
+        PWMPulseWidthSet(PWM0_BASE, PWM_OUT_2, m_pulWidth[m_index]);
+        m_index++;
+        m_index = m_index%10;
+
+        ulCntTick = 0;
+        if(bTest)
+        {
+            GPIOPinWrite(GPIO_PORTN_BASE, GPIO_PIN_0, 0);
+            bTest = false;
+        }
+        else
+        {
+            GPIOPinWrite(GPIO_PORTN_BASE, GPIO_PIN_0, GPIO_PIN_0);
+            bTest = true;
+        }
+
+    }
+
+}
+
+void PWMISR(void)
+{
+    uint32_t uiITState;
+    uint32_t state2;
+
+    state2 = PWMIntStatus(PWM0_BASE, true);
+    uiITState = PWMGenIntStatus(PWM0_BASE, PWM_GEN_1, true);
+
+    if(bTest == true)
+    {
+//        PWMOutputState(PWM0_BASE, PWM_OUT_2_BIT, false);
+//        bTest = false;
+    }
+    else if(bTest == false)
+    {
+//        PWMOutputState(PWM0_BASE, PWM_OUT_2_BIT, true);
+//        bTest = true;
+    }
+
+    PWMGenIntClear(PWM0_BASE, PWM_GEN_1, uiITState);
+}
+
+
+void Init_Timer(void)
+{
+
+    //
+    // Enable the Timer0 peripheral
+    //
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
+    //
+    // Wait for the Timer0 module to be ready.
+    //
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_TIMER0))
+    {
+    }
+
+    TimerClockSourceSet(TIMER0_BASE, TIMER_CLOCK_SYSTEM);
+    TimerPrescaleSet(TIMER0_BASE, TIMER_A, 30);
+
+
+    //
+    // Configure TimerA as a half-width one-shot timer, and TimerB as a
+    // half-width edge capture counter.
+    //
+    TimerConfigure(TIMER0_BASE, (TIMER_CFG_SPLIT_PAIR | TIMER_CFG_A_PERIODIC));
+    //
+    // Set the count time for the the one-shot timer (TimerA).
+    //
+    TimerLoadSet(TIMER0_BASE, TIMER_A, 59999);
+    //
+    // Configure the counter (TimerB) to count both edges.
+    //
+    TimerControlEvent(TIMER0_BASE, TIMER_B, TIMER_EVENT_BOTH_EDGES);
+    TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
+    //
+    // Enable the timers.
+    //
+    TimerEnable(TIMER0_BASE, TIMER_A);
+}
+
+void TimerA_ISR(void)
+{
+    if(bTest)
+    {
+        GPIOPinWrite(GPIO_PORTN_BASE, GPIO_PIN_0, 0);
+        bTest = false;
+    }
+    else
+    {
+        GPIOPinWrite(GPIO_PORTN_BASE, GPIO_PIN_0, GPIO_PIN_0);
+        bTest = true;
+    }
+
+    TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
 }
