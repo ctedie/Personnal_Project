@@ -17,5 +17,6 @@
 #define LA      533
 #define SI      474
 
+#define PAUSE   0xFFFF
 
 #endif /* NOTES_H_ */

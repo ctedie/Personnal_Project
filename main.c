@@ -21,6 +21,7 @@
 #include "driverlib/timer.h"
 
 //#include "rgb_led.h"
+#include "sound.h"
 #include "notes.h"
 
 static uint8_t m_ucColor = 0;
@@ -32,7 +33,6 @@ void Init_PWM(void);
 void Button_Interrupt(void);
 void LED_Init(void);
 void Init_Systick(void);
-void Init_Timer(void);
 
 int main(void)
 {
@@ -51,10 +51,10 @@ int main(void)
 //                                             SYSCTL_CFG_VCO_480), 120000000);
 
 
-    Init_PWM();
+    SOUND_Init();
+//    Init_PWM();
     //LED_Init();
     //Init_Systick();
-    Init_Timer();
 
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPION);
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPION))
@@ -73,7 +73,9 @@ int main(void)
 //
 //    IntEnable(INT_GPIOJ);
     IntEnable(INT_PWM0_1);
+
     IntEnable(INT_TIMER0A);
+
     IntMasterEnable();
     //PWMGenConfigure(PWM0_BASE, )
 
@@ -99,7 +101,7 @@ void Button_Interrupt(void)
 
 
 
-uint32_t m_temp = 0;
+static uint32_t m_temp = 0;
 void Init_PWM(void)
 {
     //
@@ -288,56 +290,4 @@ void PWMISR(void)
 }
 
 
-void Init_Timer(void)
-{
 
-    //
-    // Enable the Timer0 peripheral
-    //
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
-    //
-    // Wait for the Timer0 module to be ready.
-    //
-    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_TIMER0))
-    {
-    }
-
-    TimerClockSourceSet(TIMER0_BASE, TIMER_CLOCK_SYSTEM);
-    TimerPrescaleSet(TIMER0_BASE, TIMER_A, 30);
-
-
-    //
-    // Configure TimerA as a half-width one-shot timer, and TimerB as a
-    // half-width edge capture counter.
-    //
-    TimerConfigure(TIMER0_BASE, (TIMER_CFG_SPLIT_PAIR | TIMER_CFG_A_PERIODIC));
-    //
-    // Set the count time for the the one-shot timer (TimerA).
-    //
-    TimerLoadSet(TIMER0_BASE, TIMER_A, 59999);
-    //
-    // Configure the counter (TimerB) to count both edges.
-    //
-    TimerControlEvent(TIMER0_BASE, TIMER_B, TIMER_EVENT_BOTH_EDGES);
-    TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
-    //
-    // Enable the timers.
-    //
-    TimerEnable(TIMER0_BASE, TIMER_A);
-}
-
-void TimerA_ISR(void)
-{
-    if(bTest)
-    {
-        GPIOPinWrite(GPIO_PORTN_BASE, GPIO_PIN_0, 0);
-        bTest = false;
-    }
-    else
-    {
-        GPIOPinWrite(GPIO_PORTN_BASE, GPIO_PIN_0, GPIO_PIN_0);
-        bTest = true;
-    }
-
-    TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
-}

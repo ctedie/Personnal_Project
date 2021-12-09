@@ -52,6 +52,7 @@
 									<listOptionValue builtIn="false" value="${PROJECT_ROOT}"/>
 									<listOptionValue builtIn="false" value="${CG_TOOL_ROOT}/include"/>
 									<listOptionValue builtIn="false" value="${PROJECT_ROOT}/MODULE/rgb_led"/>
+									<listOptionValue builtIn="false" value="${PROJECT_ROOT}/MODULE/sound"/>
 									<listOptionValue builtIn="false" value="C:\ti\tivaware_c_series_2_1_4_178"/>
 								</option>
 								<option id="com.ti.ccstudio.buildDefinitions.TMS470_20.2.compilerID.LITTLE_ENDIAN.1798375064" name="Little endian code [See 'General' page to edit] (--little_endian, -me)" superClass="com.ti.ccstudio.buildDefinitions.TMS470_20.2.compilerID.LITTLE_ENDIAN" useByScannerDiscovery="false" value="true" valueType="boolean"/>
