@@ -163,6 +163,15 @@ void SOUND_Init(void)
 
 }
 
+void SOUD_Activate(void)
+{
+    PWMGenEnable(PWM0_BASE, PWM_GEN_0);
+}
+
+void SOUND_Deactivate(void)
+{
+    PWMGenDisable(PWM0_BASE, PWM_GEN_0);
+}
 
 static bool bTest = false;
 

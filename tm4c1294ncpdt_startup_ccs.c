@@ -36,6 +36,7 @@ static void IntDefaultHandler(void);
 void SystickISR(void);
 void PWMISR(void);
 void TimerA_ISR(void);
+void BUTTONS_Int(void);
 
 //*****************************************************************************
 //
@@ -139,7 +140,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // External Bus Interface 0
     IntDefaultHandler,                      // GPIO Port J
     IntDefaultHandler,                      // GPIO Port K
-    IntDefaultHandler,                      // GPIO Port L
+    BUTTONS_Int,                      // GPIO Port L
     IntDefaultHandler,                      // SSI2 Rx and Tx
     IntDefaultHandler,                      // SSI3 Rx and Tx
     IntDefaultHandler,                      // UART3 Rx and Tx

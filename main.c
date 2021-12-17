@@ -23,6 +23,7 @@
 //#include "rgb_led.h"
 #include "sound.h"
 #include "notes.h"
+#include "buttons.h"
 
 static uint8_t m_ucColor = 0;
 
@@ -52,6 +53,7 @@ int main(void)
 
 
     SOUND_Init();
+    BUTTONS_Init();
 //    Init_PWM();
     //LED_Init();
     //Init_Systick();

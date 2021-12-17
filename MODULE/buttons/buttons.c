@@ -9,15 +9,47 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "inc/hw_ints.h"
+#include "inc/hw_memmap.h"
 
 #include "driverlib/gpio.h"
 #include "driverlib/sysctl.h"
 #include "driverlib/interrupt.h"
 
+#include "sound.h"
 #include "buttons.h"
 
 
 void BUTTONS_Init(void)
 {
 
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOL);
+
+    GPIOPinTypeGPIOInput(GPIO_PORTL_BASE, GPIO_PIN_1 | GPIO_PIN_2);
+
+    GPIOIntTypeSet(GPIO_PORTL_BASE, GPIO_PIN_1 | GPIO_PIN_2, GPIO_FALLING_EDGE);
+
+    GPIOIntEnable(GPIO_PORTL_BASE, GPIO_INT_PIN_1 | GPIO_INT_PIN_2);
+
+    GPIOIntClear(GPIO_PORTL_BASE, GPIO_INT_PIN_1 | GPIO_INT_PIN_2);
+
+    IntEnable(INT_GPIOL);
+
+}
+
+static bool m_bLast = false;
+void BUTTONS_Int(void)
+{
+
+    if(m_bLast == false)
+    {
+        m_bLast = true;
+        SOUND_Deactivate();
+    }
+    else
+    {
+        m_bLast = false;
+        SOUD_Activate();
+    }
+
+    GPIOIntClear(GPIO_PORTL_BASE, GPIO_INT_PIN_1 | GPIO_INT_PIN_2);
 }

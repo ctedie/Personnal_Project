@@ -36,5 +36,7 @@ typedef struct
 
 
 void SOUND_Init(void);
+void SOUD_Activate(void);
+void SOUND_Deactivate(void);
 
 #endif /* MODULE_SOUND_SOUND_H_ */
