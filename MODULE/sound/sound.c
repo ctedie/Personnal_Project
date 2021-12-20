@@ -56,7 +56,7 @@ music_t tJordan =
 
 uint16_t m_psNotes[] = {DO, RE, MI, FA, SOL, LA, SI};
 
-void NextNote(void);
+static void NextNote(void);
 
 
 void SOUND_Init(void)
