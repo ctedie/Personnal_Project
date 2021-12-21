@@ -11,6 +11,7 @@
 #include "inc/hw_ints.h"
 #include "inc/hw_memmap.h"
 #include "inc/hw_timer.h"
+#include "inc/hw_adc.h"
 #include "driverlib/debug.h"
 #include "driverlib/gpio.h"
 #include "driverlib/sysctl.h"
@@ -19,12 +20,16 @@
 #include "driverlib/systick.h"
 #include "driverlib/pin_map.h"
 #include "driverlib/timer.h"
+#include "driverlib/adc.h"
 
 //#include "rgb_led.h"
+#include "utils/uartstdio.h"
+
 #include "sound.h"
 #include "notes.h"
 #include "buttons.h"
-
+#include "uart.h"
+#include "joystick.h"
 static uint8_t m_ucColor = 0;
 
 
@@ -56,14 +61,16 @@ int main(void)
     BUTTONS_Init();
 //    Init_PWM();
     //LED_Init();
-    //Init_Systick();
+    Init_Systick();
+    UART_Init(g_ui32SysClock);
+    JOYSTICK_Init();
 
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPION);
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPION))
     {
     }
     GPIOPinTypeGPIOOutput(GPIO_PORTN_BASE, GPIO_PIN_0);
-//
+
 //    GPIOIntRegister(GPIO_PORTJ_BASE, Button_Interrupt);
 //
 //
@@ -241,6 +248,9 @@ bool bTest = false;
 
 uint32_t m_pulWidth[] = {187500, 375000, 562500, 750000, 937500, 1125000, 1312500, 1500000, 1687500, 1875000};
 uint8_t m_index = 0;
+static uint32_t m_ulADCVal_X;
+static uint32_t m_ulADCVal_Y;
+static bool m_bAxe_X_Y = false;
 void SystickISR(void)
 {
 
@@ -266,6 +276,26 @@ void SystickISR(void)
         }
 
     }
+
+    if(m_bAxe_X_Y)
+    {
+        //Y
+        m_ulADCVal_Y = JOYSTICK_GetYValue();
+
+
+        m_bAxe_X_Y = false;
+        UARTprintf("Joystick X = %4d | Joystick Y = %4d\r", m_ulADCVal_X, m_ulADCVal_Y);
+    }
+    else
+    {
+        //X
+        m_ulADCVal_X = JOYSTICK_GetXValue();
+
+        m_bAxe_X_Y = true;
+        UARTprintf("Joystick X = %4d | Joystick Y = %4d\r", m_ulADCVal_X, m_ulADCVal_Y);
+
+    }
+
 
 }
 

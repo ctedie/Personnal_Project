@@ -134,3 +134,56 @@ void JOYSTICK_Init(void)
 
 }
 
+uint32_t JOYSTICK_GetXValue(void)
+{
+    uint32_t u32ValX;
+
+    ADCProcessorTrigger(ADC0_BASE, 2);
+
+    //
+    // Wait for conversion to be completed.
+    //
+    while(!ADCIntStatus(ADC0_BASE, 2, false))
+    {
+    }
+
+    //
+    // Clear the ADC interrupt flag.
+    //
+    ADCIntClear(ADC0_BASE, 2);
+
+    //
+    // Read ADC Value.
+    //
+    ADCSequenceDataGet(ADC0_BASE, 2, &u32ValX);
+
+    return u32ValX;
+
+}
+
+uint32_t JOYSTICK_GetYValue(void)
+{
+    uint32_t u32ValY;
+
+    ADCProcessorTrigger(ADC0_BASE, 3);
+
+    //
+    // Wait for conversion to be completed.
+    //
+    while(!ADCIntStatus(ADC0_BASE, 3, false))
+    {
+    }
+
+    //
+    // Clear the ADC interrupt flag.
+    //
+    ADCIntClear(ADC0_BASE, 3);
+
+    //
+    // Read ADC Value.
+    //
+    ADCSequenceDataGet(ADC0_BASE, 3, &u32ValY);
+
+    return u32ValY;
+}
+
