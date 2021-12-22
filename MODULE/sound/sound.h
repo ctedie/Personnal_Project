@@ -9,22 +9,24 @@
 #define MODULE_SOUND_SOUND_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "notes.h"
 
 typedef enum
 {
-    RONRE,
-    BLANCHE,
-    NOIRE,
-    CROCHE,
+    TRIPLE_CROCHE = 1,
     DOUBLE_CROCHE,
-    TRIPLE_CROCHE
+    CROCHE,
+    NOIRE,
+    BLANCHE,
+    RONDE,
 }style_t;
 
 typedef struct
 {
     uint16_t freq;
     style_t style;
+    uint8_t ITRestante;
 }note_t;
 
 typedef struct
@@ -34,9 +36,11 @@ typedef struct
     note_t *notes;
 }music_t;
 
+bool SOUND_bPlaying;
 
 void SOUND_Init(void);
 void SOUD_Activate(void);
 void SOUND_Deactivate(void);
+void SOUND_PlayMusic(music_t* tMusic);
 
 #endif /* MODULE_SOUND_SOUND_H_ */

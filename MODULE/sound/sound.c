@@ -25,42 +25,24 @@
 static uint32_t m_temp = 0;
 static uint8_t m_ucIndexNote = 0;
 
+extern music_t tJordan;
 
-
-music_t tJordan =
-{
-    .title = "Misuque Jordan\0",
-    .BPM = 120,
-    .notes = {
-        {DO, NOIRE},
-        {FA, NOIRE},
-        {FA, CROCHE},
-        {FA, CROCHE},
-        {PAUSE, NOIRE},
-        {DO, NOIRE},
-        {RE, NOIRE},
-        {RE, CROCHE},
-        {RE, CROCHE},
-        {PAUSE, NOIRE},
-        {DO, NOIRE},
-        {MI, NOIRE},
-        {MI, CROCHE},
-        {MI, CROCHE},
-        {PAUSE, NOIRE},
-        {DO, NOIRE},
-        {FA, NOIRE},
-        {FA, CROCHE},
-        {FA, CROCHE}
-    }
-};
 
 uint16_t m_psNotes[] = {DO, RE, MI, FA, SOL, LA, SI};
-
+music_t *m_MtusicInProgress;
 static void NextNote(void);
+void Interruption(void);
+static void CalculITRestante(music_t *tMusic);
+
+static void IT_TEST(void);
+
 
 
 void SOUND_Init(void)
 {
+
+    m_MtusicInProgress = &tJordan;
+    SOUND_bPlaying = false;
 
     // Enable the PWM0 peripheral
     SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM0);
@@ -108,9 +90,9 @@ void SOUND_Init(void)
     // microseconds. For a 120 MHz clock, this translates to 120000000 clock ticks.
     // Use this value to set the period.
     //
-    PWMGenPeriodSet(PWM0_BASE, PWM_GEN_0, SI);
+//    PWMGenPeriodSet(PWM0_BASE, PWM_GEN_0, DO);
 
-    PWMPulseWidthSet(PWM0_BASE, PWM_OUT_1, SI/2);    //buzzer
+    PWMPulseWidthSet(PWM0_BASE, PWM_OUT_1, 1);    //buzzer
 
 
     //
@@ -153,6 +135,14 @@ void SOUND_Init(void)
     // Configure the counter (TimerB) to count both edges.
     //
     TimerControlEvent(TIMER0_BASE, TIMER_B, TIMER_EVENT_BOTH_EDGES);
+
+    TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
+
+    //FIXME Crée une erreur
+    TimerIntRegister(TIMER0_BASE, TIMER_A, Interruption);
+//    TimerIntRegister(TIMER0_BASE, TIMER_A, IT_TEST);
+
+
     TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
 
     //
@@ -173,6 +163,34 @@ void SOUND_Deactivate(void)
     PWMGenDisable(PWM0_BASE, PWM_GEN_0);
 }
 
+void SOUND_PlayMusic(music_t* tMusic)
+{
+    SOUND_bPlaying = true;
+
+    m_MtusicInProgress = tMusic;
+    CalculITRestante(m_MtusicInProgress);
+
+    PWMGenEnable(PWM0_BASE, PWM_GEN_0);
+    TimerEnable(TIMER0_BASE, TIMER_A);
+}
+
+static void NextNote(void)
+{
+    if(m_ucIndexNote >= 6)
+    {
+        m_ucIndexNote = 0;
+    }
+    else
+    {
+        m_ucIndexNote++;
+    }
+}
+
+static void PlayNextNote(void)
+{
+
+}
+
 static bool bTest = false;
 
 void TimerA_ISR(void)
@@ -189,23 +207,69 @@ void TimerA_ISR(void)
 //    {
 //        GPIOPinWrite(GPIO_PORTN_BASE, GPIO_PIN_0, GPIO_PIN_0);
         PWMGenPeriodSet(PWM0_BASE, PWM_GEN_0, m_psNotes[m_ucIndexNote]);
-        PWMPulseWidthSet(PWM0_BASE, PWM_OUT_1, m_psNotes[m_ucIndexNote]/2);    //buzzer
+        PWMPulseWidthSet(PWM0_BASE, PWM_OUT_1, m_psNotes[m_ucIndexNote]/m_psNotes[m_ucIndexNote]);    //buzzer
 //        PWMGenEnable(PWM0_BASE, PWM_GEN_0);
         bTest = true;
-        NextNote();
+//        NextNote();
 //    }
 
     TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
 }
 
-static void NextNote(void)
+void Interruption(void)
 {
-    if(m_ucIndexNote >= 6)
+
+    uint32_t status;
+
+    status = TimerIntStatus(TIMER0_BASE, false);
+
+    if(SOUND_bPlaying)
     {
-        m_ucIndexNote = 0;
-    }
-    else
+        if(m_MtusicInProgress->notes[m_ucIndexNote].ITRestante == 0)
+        {
+            PlayNextNote();
+
+        }
+        else
+        {
+            m_MtusicInProgress->notes[m_ucIndexNote].ITRestante--;
+        }
+}
+    TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
+
+}
+
+static void IT_TEST(void)
+{
+    TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
+
+}
+
+
+static void CalculITRestante(music_t *tMusic)
+{
+    switch (tMusic->notes[m_ucIndexNote].style)
     {
-        m_ucIndexNote++;
+        case TRIPLE_CROCHE:
+            tMusic->notes[m_ucIndexNote].ITRestante = 1;
+            break;
+        case DOUBLE_CROCHE:
+            tMusic->notes[m_ucIndexNote].ITRestante = 2;
+            break;
+        case CROCHE:
+            tMusic->notes[m_ucIndexNote].ITRestante = 4;
+            break;
+        case NOIRE:
+            tMusic->notes[m_ucIndexNote].ITRestante = 8;
+            break;
+        case BLANCHE:
+            tMusic->notes[m_ucIndexNote].ITRestante = 16;
+            break;
+        case RONDE:
+            tMusic->notes[m_ucIndexNote].ITRestante = 32;
+            break;
+            default:
+                break;
     }
+
 }

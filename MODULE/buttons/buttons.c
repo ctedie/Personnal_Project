@@ -17,6 +17,15 @@
 
 #include "sound.h"
 #include "buttons.h"
+#include "music.h"
+
+music_t tJordan
+=
+{
+    .title = "Misuque Jordan\0",
+    .BPM = 120,
+    .notes = g_tSong
+};
 
 
 void BUTTONS_Init(void)
@@ -40,16 +49,7 @@ static bool m_bLast = false;
 void BUTTONS_Int(void)
 {
 
-    if(m_bLast == false)
-    {
-        m_bLast = true;
-        SOUND_Deactivate();
-    }
-    else
-    {
-        m_bLast = false;
-        SOUD_Activate();
-    }
+    SOUND_PlayMusic(&tJordan);
 
     GPIOIntClear(GPIO_PORTL_BASE, GPIO_INT_PIN_1 | GPIO_INT_PIN_2);
 }
