@@ -42,5 +42,6 @@ void SOUND_Init(void);
 void SOUD_Activate(void);
 void SOUND_Deactivate(void);
 void SOUND_PlayMusic(music_t* tMusic);
+void SOUND_MusicStop(void);
 
 #endif /* MODULE_SOUND_SOUND_H_ */

@@ -130,7 +130,7 @@ void SOUND_Init(void)
     //
     // Set the count time for the the one-shot timer (TimerA).
     //
-    TimerLoadSet(TIMER0_BASE, TIMER_A, 59999);
+    TimerLoadSet(TIMER0_BASE, TIMER_A, 28999/*59999*/);
     //
     // Configure the counter (TimerB) to count both edges.
     //
@@ -170,8 +170,20 @@ void SOUND_PlayMusic(music_t* tMusic)
     m_MtusicInProgress = tMusic;
     CalculITRestante(m_MtusicInProgress);
 
+    m_ucIndexNote = 0;
+
+    PWMGenPeriodSet(PWM0_BASE, PWM_GEN_0, m_psNotes[m_ucIndexNote]);
+    PWMPulseWidthSet(PWM0_BASE, PWM_OUT_1, m_psNotes[m_ucIndexNote]/2/*m_psNotes[m_ucIndexNote]*/);    //buzzer
+
     PWMGenEnable(PWM0_BASE, PWM_GEN_0);
     TimerEnable(TIMER0_BASE, TIMER_A);
+}
+
+void SOUND_MusicStop(void)
+{
+    PWMGenDisable(PWM0_BASE, PWM_GEN_0);
+    TimerDisable(TIMER0_BASE, TIMER_A);
+
 }
 
 static void NextNote(void)
@@ -188,7 +200,24 @@ static void NextNote(void)
 
 static void PlayNextNote(void)
 {
+    m_ucIndexNote++;
+    CalculITRestante(m_MtusicInProgress);
 
+    if(m_MtusicInProgress->notes[m_ucIndexNote].freq == PAUSE)
+    {
+        PWMGenPeriodSet(PWM0_BASE, PWM_GEN_0, 0);
+        PWMPulseWidthSet(PWM0_BASE, PWM_OUT_1, 0);    //buzzer
+    }
+    else if(m_MtusicInProgress->notes[m_ucIndexNote].freq == STOP)
+    {
+        SOUND_MusicStop();
+    }
+    else
+    {
+
+        PWMGenPeriodSet(PWM0_BASE, PWM_GEN_0, m_MtusicInProgress->notes[m_ucIndexNote].freq);
+        PWMPulseWidthSet(PWM0_BASE, PWM_OUT_1, m_MtusicInProgress->notes[m_ucIndexNote].freq/2/*m_MtusicInProgress->notes[m_ucIndexNote].freq*/);    //buzzer
+    }
 }
 
 static bool bTest = false;

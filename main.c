@@ -61,9 +61,9 @@ int main(void)
     BUTTONS_Init();
 //    Init_PWM();
     //LED_Init();
-    Init_Systick();
-    UART_Init(g_ui32SysClock);
-    JOYSTICK_Init();
+//    Init_Systick();
+//    UART_Init(g_ui32SysClock);
+//    JOYSTICK_Init();
 
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPION);
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPION))
@@ -81,8 +81,7 @@ int main(void)
 //    GPIOIntClear(GPIO_PORTJ_BASE, GPIO_INT_PIN_0);
 //
 //    IntEnable(INT_GPIOJ);
-    IntEnable(INT_PWM0_1);
-
+//    IntEnable(INT_PWM0_1);
     IntEnable(INT_TIMER0A);
 
     IntMasterEnable();

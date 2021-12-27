@@ -16,6 +16,7 @@
 #define SOL     598
 #define LA      533
 #define SI      474
+#define STOP    1
 
 #define PAUSE   0xFFFF
 
