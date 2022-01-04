@@ -14,17 +14,17 @@
 
 typedef enum
 {
-    TRIPLE_CROCHE = 1,
-    DOUBLE_CROCHE,
-    CROCHE,
-    NOIRE,
-    BLANCHE,
-    RONDE,
+    STYLE_TRIPLE_CROCHE = 1,
+    STYLE_DOUBLE_CROCHE,
+    STYLE_CROCHE,
+    STYLE_NOIRE,
+    STYLE_BLANCHE,
+    STYLE_RONDE,
 }style_t;
 
 typedef struct
 {
-    uint16_t freq;
+    double freq;
     style_t style;
     uint8_t ITRestante;
 }note_t;

@@ -24,7 +24,7 @@
 
 static uint32_t m_temp = 0;
 static uint8_t m_ucIndexNote = 0;
-
+static uint8_t m_u8Volume = 1;
 extern music_t tJordan;
 
 
@@ -33,7 +33,8 @@ music_t *m_MtusicInProgress;
 static void NextNote(void);
 void Interruption(void);
 static void CalculITRestante(music_t *tMusic);
-
+static uint32_t GetNoteTicks(double dNote);
+static uint32_t CalcVolume(uint32_t u32Val, uint8_t u8Volume);
 static void IT_TEST(void);
 
 
@@ -82,7 +83,7 @@ void SOUND_Init(void)
 
     PWMGenConfigure(PWM0_BASE, PWM_GEN_0, PWM_GEN_MODE_DOWN | PWM_GEN_MODE_NO_SYNC);
 
-    PWMClockSet(PWM0_BASE, PWM_SYSCLK_DIV_64);
+    PWMClockSet(PWM0_BASE, PWM_SYSCLK_DIV_8);
     m_temp = PWMClockGet(PWM0_BASE);
 
     //
@@ -163,17 +164,19 @@ void SOUND_Deactivate(void)
     PWMGenDisable(PWM0_BASE, PWM_GEN_0);
 }
 
+static uint32_t m_u32Intermediaire1, m_u32Intermediaire2;
 void SOUND_PlayMusic(music_t* tMusic)
 {
     SOUND_bPlaying = true;
 
     m_MtusicInProgress = tMusic;
+    m_ucIndexNote = 0;
     CalculITRestante(m_MtusicInProgress);
 
-    m_ucIndexNote = 0;
-
-    PWMGenPeriodSet(PWM0_BASE, PWM_GEN_0, m_psNotes[m_ucIndexNote]);
-    PWMPulseWidthSet(PWM0_BASE, PWM_OUT_1, m_psNotes[m_ucIndexNote]/2/*m_psNotes[m_ucIndexNote]*/);    //buzzer
+    m_u32Intermediaire1 = GetNoteTicks(m_MtusicInProgress->notes[m_ucIndexNote].freq);
+    m_u32Intermediaire2 = CalcVolume(GetNoteTicks(m_MtusicInProgress->notes[m_ucIndexNote].freq), m_u8Volume);
+    PWMGenPeriodSet(PWM0_BASE, PWM_GEN_0, m_u32Intermediaire1);
+    PWMPulseWidthSet(PWM0_BASE, PWM_OUT_1, m_u32Intermediaire2);
 
     PWMGenEnable(PWM0_BASE, PWM_GEN_0);
     TimerEnable(TIMER0_BASE, TIMER_A);
@@ -200,6 +203,10 @@ static void NextNote(void)
 
 static void PlayNextNote(void)
 {
+    uint32_t u32Period;
+    uint32_t u32ValPeriod;
+
+
     m_ucIndexNote++;
     CalculITRestante(m_MtusicInProgress);
 
@@ -214,10 +221,14 @@ static void PlayNextNote(void)
     }
     else
     {
+        //u32Period = 15000000/64/*PWMClockGet(PWM0_BASE)*/;
+        u32ValPeriod = GetNoteTicks(DO_FREQUENCY_3);
 
-        PWMGenPeriodSet(PWM0_BASE, PWM_GEN_0, m_MtusicInProgress->notes[m_ucIndexNote].freq);
-        PWMPulseWidthSet(PWM0_BASE, PWM_OUT_1, m_MtusicInProgress->notes[m_ucIndexNote].freq/2/*m_MtusicInProgress->notes[m_ucIndexNote].freq*/);    //buzzer
-    }
+        PWMGenPeriodSet(PWM0_BASE, PWM_GEN_0, GetNoteTicks(m_MtusicInProgress->notes[m_ucIndexNote].freq));
+        PWMPulseWidthSet(PWM0_BASE, PWM_OUT_1, CalcVolume(GetNoteTicks(m_MtusicInProgress->notes[m_ucIndexNote].freq), m_u8Volume) );    //buzzer
+
+
+}
 }
 
 static bool bTest = false;
@@ -279,26 +290,39 @@ static void CalculITRestante(music_t *tMusic)
 {
     switch (tMusic->notes[m_ucIndexNote].style)
     {
-        case TRIPLE_CROCHE:
+        case STYLE_TRIPLE_CROCHE:
             tMusic->notes[m_ucIndexNote].ITRestante = 1;
             break;
-        case DOUBLE_CROCHE:
+        case STYLE_DOUBLE_CROCHE:
             tMusic->notes[m_ucIndexNote].ITRestante = 2;
             break;
-        case CROCHE:
+        case STYLE_CROCHE:
             tMusic->notes[m_ucIndexNote].ITRestante = 4;
             break;
-        case NOIRE:
+        case STYLE_NOIRE:
             tMusic->notes[m_ucIndexNote].ITRestante = 8;
             break;
-        case BLANCHE:
+        case STYLE_BLANCHE:
             tMusic->notes[m_ucIndexNote].ITRestante = 16;
             break;
-        case RONDE:
+        case STYLE_RONDE:
             tMusic->notes[m_ucIndexNote].ITRestante = 32;
             break;
             default:
                 break;
     }
 
+}
+
+static uint32_t GetNoteTicks(double dNote)
+{
+    double dFreq = (15000000.0/8.0)/dNote;
+
+
+    return (uint32_t)dFreq;
+}
+
+static uint32_t CalcVolume(uint32_t u32Val, uint8_t u8Volume)
+{
+    return (uint32_t)(((double)u8Volume*(double)u32Val)/100.0);
 }

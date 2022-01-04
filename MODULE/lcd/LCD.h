@@ -9,6 +9,7 @@
 #define MODULE_LCD_LCD_H_
 
 
+void LCD_Init(void);
 
 #endif /* MODULE_LCD_LCD_H_ */
 

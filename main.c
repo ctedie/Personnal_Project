@@ -25,6 +25,7 @@
 //#include "rgb_led.h"
 #include "utils/uartstdio.h"
 
+#include "modules.h"
 #include "sound.h"
 #include "notes.h"
 #include "buttons.h"
@@ -56,14 +57,28 @@ int main(void)
 //                                             SYSCTL_USE_PLL |
 //                                             SYSCTL_CFG_VCO_480), 120000000);
 
-
+#ifdef HAS_SOUND
     SOUND_Init();
+#endif
+
+#ifdef HAS_BUTTONS
     BUTTONS_Init();
-//    Init_PWM();
+#endif
+
+#ifdef HAS_JOYSTICK
+    JOYSTICK_Init();
+#endif
+
+#ifdef HAS_UART
+    UART_Init(g_ui32SysClock);
+#endif
+
+#ifdef HAS_ACCELEROMETER
+    ACCELEROMETER_Init();
+#endif
+
     //LED_Init();
 //    Init_Systick();
-//    UART_Init(g_ui32SysClock);
-//    JOYSTICK_Init();
 
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPION);
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPION))

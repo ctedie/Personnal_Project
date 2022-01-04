@@ -24,7 +24,7 @@ music_t tJordan
 {
     .title = "Misuque Jordan\0",
     .BPM = 120,
-    .notes = g_ptPapaNoel
+    .notes = g_ptHappyBirthday
 };
 
 
