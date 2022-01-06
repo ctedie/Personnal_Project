@@ -8,7 +8,7 @@
 #ifndef MODULES_H_
 #define MODULES_H_
 
-//#define HAS_ACCELEROMETER
+#define HAS_ACCELEROMETER
 #define HAS_RGB_LED
 #define HAS_SOUND
 #define HAS_LDC

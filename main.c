@@ -31,6 +31,7 @@
 #include "buttons.h"
 #include "uart.h"
 #include "joystick.h"
+#include "accelerometer.h"
 static uint8_t m_ucColor = 0;
 
 
@@ -78,7 +79,7 @@ int main(void)
 #endif
 
     //LED_Init();
-//    Init_Systick();
+    Init_Systick();
 
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPION);
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPION))
@@ -262,8 +263,7 @@ bool bTest = false;
 
 uint32_t m_pulWidth[] = {187500, 375000, 562500, 750000, 937500, 1125000, 1312500, 1500000, 1687500, 1875000};
 uint8_t m_index = 0;
-static uint32_t m_ulADCVal_X;
-static uint32_t m_ulADCVal_Y;
+static uint32_t m_ulADCVal_X, m_ulADCVal_Y, m_ulADCVal_Z;
 static bool m_bAxe_X_Y = false;
 void SystickISR(void)
 {
@@ -291,6 +291,7 @@ void SystickISR(void)
 
     }
 
+#ifdef HAS_JOYSTICK
     if(m_bAxe_X_Y)
     {
         //Y
@@ -309,8 +310,10 @@ void SystickISR(void)
         UARTprintf("Joystick X = %4d | Joystick Y = %4d\r", m_ulADCVal_X, m_ulADCVal_Y);
 
     }
-
-
+#endif
+    m_ulADCVal_X = ACCELEROMETER_GetX();
+    m_ulADCVal_Y = ACCELEROMETER_GetY();
+    m_ulADCVal_Z = ACCELEROMETER_GetZ();
 }
 
 void PWMISR(void)
